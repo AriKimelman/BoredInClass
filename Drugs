@@ -45,7 +45,7 @@ PercentSmokeOnce_30days = (SmokeOnce_30days/ sum(dataset$CIGEVER == 1))*100
 
 ------------------
 ##Question 2: 
-# Are there people who have done hard cocaine WITHOUT doing weed? 
+# Are there people who have done cocaine WITHOUT having done weed? 
 -----------------
 #Error: NA using some function 
 
