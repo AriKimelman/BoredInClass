@@ -1,0 +1,135 @@
+-----------------
+##location of dataset
+#https://www.icpsr.umich.edu/web/NACJD/studies/27521/versions/V1/summary
+
+#Large Dataset from US Gov
+
+# Dataset Study Purpose: The purpose of the study was to examine the gendered effects of depression,
+# drug use, and treatment on crime and the effects of interaction with the criminal 
+# justice system on subsequent depression and drug use.
+------------------
+  
+#Error: cannot load in the source editor due to the dataset being too large 
+
+# solve attempt #1 - Failed
+
+library('tidyverse')
+my_data = read_csv('27521-0001-Data.sav')
+head(my_data)
+
+# solve attempt #2 - Success!
+
+library(haven)
+path = file.path("/Users/arikimelman/Downloads/Data-Related/R-Learning","27521-0001-Data.sav")
+dataset = read_sav(path)
+
+#Test to see if dataset was read-in properly - Success! 
+
+head(dataset)
+
+## thought process: 
+# either reduce number of rows and keep all columns OR 
+# create new dataset only with variables of interest 
+# refer to codebook for survey questions to inspire analysis 
+
+------------------
+## Question 1: 
+#What percentage of people who have tried a cigeratte end up smoking for 30 days in a row once in their life 
+------------------
+  
+SmokeOnce_30days = sum(dataset$CIGEVER == 1 & dataset$CIGDLYMO == 1)
+PercentSmokeOnce_30days = (SmokeOnce_30days/ sum(dataset$CIGEVER == 1))*100
+
+##intepretation:
+# 25% of people who have tried a cigarette smoke every day for 30 days at least once in their life
+
+------------------
+##Question 2: 
+# Are there people who have done hard cocaine WITHOUT doing weed? 
+-----------------
+#Error: NA using some function 
+
+#Solution 1: Add "na.rm"function - NOPE!
+
+#calculate sum of no weed + yes cocaine 
+WeedNoCocaineYes = sum(dataset$MJEVER == 2 & dataset$COCEVER == 1, na.rm =TRUE)
+
+#determine number of 'yes' or 'no' to cocaine
+table(dataset['COCEVER'])
+yesCoc = 6746
+
+# As a percentage 
+percentWeedNoCocaineYes =(WeedNoCocaineYes/yesCoc)*100
+
+#interpretation: 
+# 2% of people who have done Cocaine have never done Weed
+
+------------------
+##Question 3: 
+# Do anxious or depressed females drink more than non-anxious/depressed females?
+-------------------
+
+#ALDAYPWK Variable: This represents the number of days a week you drink. 
+
+  WomenDrinkDepressed = sum(dataset$DEPFEM == 1 & dataset$COCEVER == 1, na.rm =TRUE)
+
+#Error: Hist not working 
+
+# solve attempt #1 - Failure 
+breaks =c(0, 2, 4, 6)
+hist(dataset$ALDAYPWK, breaks = c(0, 2, 4, 6), xlim = c(min(breaks), max(breaks)))
+
+#Solve attempt #2 - Success - Almost! (could not complete due to time constraints)
+
+#Start by calculating frequencies of 1-7 for depressed and non depressed females 
+
+#depressed and females 
+subset_df <- subset(dataset, IRSEX == 2 & DEPFEM == 1)
+freq_table <- table(cut(subset_df$ALDAYPWK, breaks = c(0,2,4,6,8), include.lowest = TRUE))
+freq_table   
+
+#nondepressed and females 
+subset_df1 <- subset(dataset, IRSEX == 2 & DEPFEM == 0)
+freq_table1 <- table(cut(subset_df1$ALDAYPWK, breaks = c(0,2,4,6,8), include.lowest = TRUE))
+freq_table1 
+
+##Consider different weighting based on different sample sizes of groups
+#calculate as percentages 
+
+#depressed group
+perc_table <- round(100 * freq_table / sum(freq_table), 2)
+perc_table 
+
+#nondepressed group
+perc_table1 <- round(100 * freq_table1 / sum(freq_table1), 2)
+perc_table1
+
+#plot demonstrating number of days a week drinking in depressed and non-depressed 
+plot(perc_table)
+plot(perc_table1)
+ 
+# create barplot and colour by depression status 
+
+percentagesDepressed = c(57.60, 32.32,  7.20, 2.88 )
+percentagesNonDepressed =c(60.95, 28.21  ,8.33,  2.51)
+
+##Interpretation:
+----
+#It appears women who have had a major depressive episode don't report 
+#drinking a greater numbers of days a week compared to those who 
+#have not had a major depressive episode. 
+----- 
+#concern that my frequencies are too low and are calculated incorrectly
+
+#cannot confirm due to time constraint 
+
+write.csv(dataset, "nacjd.csv")
+-------------
+## Question #4
+# do people who depressive episode start drinking at an earlier age 
+
+
+
+
+
+
