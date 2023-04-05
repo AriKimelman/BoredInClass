@@ -1,0 +1,125 @@
+
+##Objectives:
+
+#Use the DataExplorer package and GGally package to review dataset
+#Perform Linear Regression Analysis on variables Temp & Salinity 
+
+##dataset from
+#https://www.kaggle.com/datasets/sohier/calcofi
+
+## see description of 'bottle Table' dataset from source below
+#https://calcofi.org/data/oceanographic-data/bottle-database/
+
+#load packages
+
+library(DataExplorer)
+library(dplyr)
+library(stats)
+
+#read in dataset
+d = read.csv("bottle.csv")
+
+#view headers
+head(d)
+
+#select variables of interest for analysis and create new dataframe
+d1 = select(d, T_degC, Salnty, pH1, Depthm, O2Sat)
+
+#Noticed inconsistency between names of variables between two website
+#might be worthwhile to download dataset from original website instead of Kaggle 
+
+head(d1)
+
+#looked into 'NA' concern found in pH1 and 02SAT
+
+#almost all NA below 
+sum(is.na(d$pH1))
+
+#1/4th of observations missing 
+sum(is.na(d$O2Sat))
+
+# change variables included in new dataframe due to 'NA' columns
+d1 = select(d, T_degC, Salnty, Depthm)
+
+#create dataexplorer report - temp as the response variable 
+d1 %>%
+  create_report(
+    output_file = paste("Report", format(Sys.time(), "%Y-%m-%d %H:%M:%S %Z"), sep=" - "),
+    report_title = "EDA Report - CalCOFI Dataset",
+    y = "T_degC"
+  )
+
+##----------Takeaways from Report---------##
+
+#Depth and temp moderately negatively correlated
+#Salinity and temp moderately negatively correlated
+
+# --QQ plot---
+#suggests temp and salinity are normally distributed
+#suggests depth not normal - will need to consider this for analysis
+
+
+##--------------Building Regression model to predict Salinity by Temp and Depth-------------------------##
+
+#replicate QQ plot seen in data exploration output
+qqnorm(d1$Depthm, pch = 1, frame = FALSE)
+qqline(d1$Depthm, col = "steelblue", lwd = 2)
+
+#convert variable into log form to make it normal for regression
+d1$Depthm = log(d1$Depthm)
+
+#rerun qqplot after log transformation 
+qqnorm(d1$Depthm, pch = 1, frame = FALSE)
+qqline(d1$Depthm, col = "steelblue", lwd = 2)
+
+#get an error building plot and try resolve it by changing class
+d1$Depthm<- as.numeric(gsub("\\.", "", d1$Depthm))
+
+#try to make the qq plot again 
+qqnorm(d1$Depthm, pch = 1, frame = FALSE)
+qqline(d1$Depthm, col = "steelblue", lwd = 2)
+
+#run into issues of '-inf' try to solve error by rounding -inf to zero
+d1$Depthm <- ifelse(d1$Depthm == -Inf, 0, d1$Depthm)
+
+#try qqplot AGAIN - praying here
+qqnorm(d1$Depthm, pch = 1, frame = FALSE)
+qqline(d1$Depthm, col = "steelblue", lwd = 2)
+
+#Interpretation of QQplot: plot better but not perfect 
+
+##------------Assumption Checking--------------##
+
+## Source for reference
+#https://godatadrive.com/blog/basic-guide-to-test-assumptions-of-linear-regression-in-r
+
+# build regression model predicting Salinity using temp and depth
+lm_model <- lm(Salnty ~ T_degC + Depthm, data = d1)
+
+# Check assumption 
+
+#linearity 
+plot(lm_model,1)
+
+#not sure what this does - didn't run it due to time constraints
+plot(lm_model,2)
+
+#Residual errors have constant variance
+plot(lm_model,3)
+
+#summary output 
+summary(lm_model)
+
+
+## NOTE: There second variable in the equation is in its log form
+
+#--output interpretation--#
+
+#Assuming that our assumptions are met, both predictors are significant
+#low-moderate R-squared: R2 = 0.38
+#have to consider correct interpretation given the log transformation
+#I'm not able to research correct interpretations due to time constraints
+
+# Regression Equation: yhat = 33.03 - 0.0003728(X1) - log(0.1787(X2))
+
+
